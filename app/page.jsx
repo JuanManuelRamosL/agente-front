@@ -3,7 +3,8 @@ import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
+  FlatList,
   ActivityIndicator,
   Alert,
 } from "react-native";
@@ -13,10 +14,9 @@ import { Audio } from "expo-av";
 export default function ChatApp() {
   const [sessionId, setSessionId] = useState("");
   const [question, setQuestion] = useState("");
-  const [response, setResponse] = useState("");
-  const [audioUrl, setAudioUrl] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(true); // Estado para activar/desactivar reproducción automática
+  const [autoPlay, setAutoPlay] = useState(true);
 
   // Obtener session_id al iniciar la app
   useEffect(() => {
@@ -31,6 +31,7 @@ export default function ChatApp() {
     if (!question.trim()) return Alert.alert("Error", "Escribe una pregunta");
 
     setLoading(true);
+    setMessages((prev) => [...prev, { type: "user", text: question }]);
 
     try {
       const res = await axios.post(
@@ -41,11 +42,22 @@ export default function ChatApp() {
         }
       );
 
-      setResponse(res.data.response);
-      setAudioUrl(res.data.audio_url);
+      const botMessage = {
+        type: "bot",
+        text: res.data.response,
+        audio: res.data.audio_url,
+      };
+      setMessages((prev) => [...prev, botMessage]);
+
+      if (autoPlay && botMessage.audio) {
+        playAudio(botMessage.audio);
+      }
     } catch (err) {
       console.error("Error al enviar mensaje", err);
-      setResponse("Hubo un error. Intenta de nuevo.");
+      setMessages((prev) => [
+        ...prev,
+        { type: "bot", text: "Hubo un error. Intenta de nuevo." },
+      ]);
     }
 
     setLoading(false);
@@ -53,11 +65,11 @@ export default function ChatApp() {
   };
 
   // Reproducir audio desde la URL
-  const playAudio = async () => {
-    if (!audioUrl) return;
+  const playAudio = async (url) => {
+    if (!url) return;
 
     try {
-      const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
+      const { sound } = await Audio.Sound.createAsync({ uri: url });
       await sound.playAsync();
     } catch (err) {
       console.error("Error al reproducir audio", err);
@@ -65,74 +77,85 @@ export default function ChatApp() {
     }
   };
 
-  // Reproducir automáticamente el audio si está activado
-  useEffect(() => {
-    if (audioUrl && autoPlay) {
-      playAudio();
-    }
-  }, [audioUrl, autoPlay]);
-
   return (
-    <View
-      style={{
-        flex: 1,
-        padding: 20,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>
-        Chat IA con Audio
-      </Text>
-
-      <Button
-        title={autoPlay ? "🚫 Desactivar AutoPlay" : "✅ Activar AutoPlay"}
-        onPress={() => setAutoPlay(!autoPlay)}
-        style={{ marginTop: 10 }}
-      />
-
-      <TextInput
-        value={question}
-        onChangeText={setQuestion}
-        placeholder="Escribe tu pregunta..."
+    <View style={{ flex: 1, padding: 15, backgroundColor: "#f5f5f5" }}>
+      <View
         style={{
-          width: "100%",
-          padding: 10,
-          borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 5,
+          flexDirection: "row",
+          justifyContent: "space-between",
           marginBottom: 10,
         }}
+      >
+        <Text style={{ fontSize: 20, fontWeight: "bold" }}>Chat IA</Text>
+        <TouchableOpacity onPress={() => setAutoPlay(!autoPlay)}>
+          <Text style={{ color: autoPlay ? "green" : "red" }}>
+            {autoPlay ? "🔊 AutoPlay ON" : "🔇 AutoPlay OFF"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        data={messages}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View
+            style={{
+              alignSelf: item.type === "user" ? "flex-end" : "flex-start",
+              backgroundColor: item.type === "user" ? "#dcf8c6" : "#fff",
+              padding: 10,
+              borderRadius: 10,
+              marginVertical: 5,
+              maxWidth: "75%",
+              shadowColor: "#000",
+              shadowOpacity: 0.1,
+              shadowRadius: 3,
+              shadowOffset: { width: 0, height: 2 },
+            }}
+          >
+            <Text>{item.text}</Text>
+            {item.audio && (
+              <TouchableOpacity onPress={() => playAudio(item.audio)}>
+                <Text style={{ color: "blue", marginTop: 5 }}>
+                  🔊 Reproducir
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       />
 
-      <Button
-        title={loading ? "Enviando..." : "Enviar"}
-        onPress={handleSendMessage}
-        disabled={loading}
-      />
-
-      {loading && (
-        <ActivityIndicator
-          size="large"
-          color="#0000ff"
-          style={{ marginTop: 10 }}
+      <View
+        style={{ flexDirection: "row", alignItems: "center", marginTop: 10 }}
+      >
+        <TextInput
+          value={question}
+          onChangeText={setQuestion}
+          placeholder="Escribe un mensaje..."
+          style={{
+            flex: 1,
+            padding: 10,
+            borderWidth: 1,
+            borderColor: "#ccc",
+            borderRadius: 20,
+            backgroundColor: "#fff",
+          }}
         />
-      )}
-
-      {response ? (
-        <View style={{ marginTop: 20 }}>
-          <Text style={{ fontWeight: "bold" }}>Respuesta:</Text>
-          <Text>{response}</Text>
-        </View>
-      ) : null}
-
-      <>
-        <Button
-          title="🔊 Reproducir Audio"
-          onPress={playAudio}
-          style={{ marginTop: 10 }}
-        />
-      </>
+        <TouchableOpacity
+          onPress={handleSendMessage}
+          style={{
+            marginLeft: 10,
+            backgroundColor: "#007AFF",
+            padding: 10,
+            borderRadius: 50,
+          }}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={{ color: "#fff" }}>➡️</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
