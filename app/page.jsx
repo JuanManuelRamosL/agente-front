@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import { Audio } from "expo-av";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 export default function ChatApp() {
   const [sessionId, setSessionId] = useState("");
@@ -21,7 +22,7 @@ export default function ChatApp() {
   const [loading, setLoading] = useState(false);
   const [autoPlay, setAutoPlay] = useState(true);
   const [voices, setVoices] = useState([]); // Estado para almacenar las voces
-  const [selectedVoice, setSelectedVoice] = useState(null); // Estado para la voz seleccionada
+  const [selectedVoice, setSelectedVoice] = useState("EXAVITQu4vr4xnSDxMaL"); // Estado para la voz seleccionada
   const [showVoiceModal, setShowVoiceModal] = useState(false); // Estado para mostrar/ocultar el modal de voces
 
   // Obtener session_id al iniciar la app
@@ -51,7 +52,7 @@ export default function ChatApp() {
         {
           session_id: sessionId,
           question: question,
-          //voice_id: selectedVoice?.voice_id, // Envía el ID de la voz seleccionada
+          voice_id: selectedVoice?.voice_id, // Envía el ID de la voz seleccionada
         }
       );
 
@@ -142,6 +143,16 @@ export default function ChatApp() {
         </TouchableOpacity>
       </View>
 
+      <TouchableOpacity
+        style={styles.selectVoiceButton}
+        onPress={() => setShowVoiceModal(true)}
+      >
+        <Text style={styles.selectVoiceButtonText}>
+          🎤 Elegir voz:{" "}
+          {selectedVoice ? selectedVoice.name : "No seleccionada"}
+        </Text>
+      </TouchableOpacity>
+
       {/* Selector de voz */}
       <TouchableOpacity
         style={styles.voiceSelector}
@@ -186,11 +197,15 @@ export default function ChatApp() {
           style={styles.input}
           placeholderTextColor="#999"
         />
-        <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
+        <TouchableOpacity
+          onPress={handleSendMessage}
+          style={styles.sendButton}
+          underlayColor="#005bb5"
+        >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.sendButtonText}>➡️</Text>
+            <Icon name="send" size={24} color="#fff" />
           )}
         </TouchableOpacity>
       </View>
@@ -326,6 +341,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   closeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+  },
+  selectVoiceButton: {
+    backgroundColor: "#444",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  selectVoiceButtonText: {
     color: "#fff",
     fontSize: 16,
   },
