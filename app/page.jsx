@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import { Audio } from "expo-av";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ChatApp() {
   const [sessionId, setSessionId] = useState("");
@@ -21,25 +22,22 @@ export default function ChatApp() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [autoPlay, setAutoPlay] = useState(true);
-  const [voices, setVoices] = useState([]); // Estado para almacenar las voces
-  const [selectedVoice, setSelectedVoice] = useState("EXAVITQu4vr4xnSDxMaL"); // Estado para la voz seleccionada
-  const [showVoiceModal, setShowVoiceModal] = useState(false); // Estado para mostrar/ocultar el modal de voces
+  const [voices, setVoices] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState("EXAVITQu4vr4xnSDxMaL");
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
 
-  // Obtener session_id al iniciar la app
   useEffect(() => {
     axios
       .get("https://chatbot-voz-production.up.railway.app/new_session")
       .then((res) => setSessionId(res.data.session_id))
       .catch((err) => console.error("Error al obtener sesión", err));
 
-    // Obtener la lista de voces
     axios
-      .get("https://api.elevenlabs.io/v1/voices") // Reemplaza con tu endpoint
+      .get("https://api.elevenlabs.io/v1/voices")
       .then((res) => setVoices(res.data.voices))
       .catch((err) => console.error("Error al obtener voces", err));
   }, []);
 
-  // Enviar mensaje al backend
   const handleSendMessage = async () => {
     if (!question.trim()) return Alert.alert("Error", "Escribe una pregunta");
 
@@ -52,7 +50,7 @@ export default function ChatApp() {
         {
           session_id: sessionId,
           question: question,
-          voice_id: selectedVoice?.voice_id, // Envía el ID de la voz seleccionada
+          voice_id: selectedVoice?.voice_id || "EXAVITQu4vr4xnSDxMaL",
         }
       );
 
@@ -78,7 +76,6 @@ export default function ChatApp() {
     setQuestion("");
   };
 
-  // Reproducir audio desde la URL
   const playAudio = async (url) => {
     if (!url) return;
 
@@ -91,15 +88,13 @@ export default function ChatApp() {
     }
   };
 
-  // Seleccionar una voz
   const handleSelectVoice = (voice) => {
     setSelectedVoice(voice);
-    setShowVoiceModal(false); // Cierra el modal después de seleccionar
+    setShowVoiceModal(false);
   };
 
   return (
     <View style={styles.container}>
-      {/* Modal para seleccionar voces */}
       <Modal
         visible={showVoiceModal}
         transparent={true}
@@ -133,9 +128,15 @@ export default function ChatApp() {
         </View>
       </Modal>
 
-      {/* Encabezado */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Chat IA</Text>
+        <LinearGradient
+          colors={["#00FFAA", "#0077FF"]} // Degradado de verde a azul
+          start={{ x: 0, y: 0 }} // Dirección del degradado (izquierda a derecha)
+          end={{ x: 1, y: 0 }}
+          style={styles.gradientBackground}
+        >
+          <Text style={styles.headerText}>EvexIA</Text>
+        </LinearGradient>
         <TouchableOpacity onPress={() => setAutoPlay(!autoPlay)}>
           <Text style={autoPlay ? styles.autoPlayOn : styles.autoPlayOff}>
             {autoPlay ? "🔊 AutoPlay ON" : "🔇 AutoPlay OFF"}
@@ -153,42 +154,35 @@ export default function ChatApp() {
         </Text>
       </TouchableOpacity>
 
-      {/* Selector de voz */}
-      <TouchableOpacity
-        style={styles.voiceSelector}
-        onPress={() => setShowVoiceModal(true)}
+      <LinearGradient
+        colors={["#1e1e1e", "#333"]}
+        style={styles.messagesContainer}
       >
-        <Text style={styles.voiceSelectorText}>
-          {selectedVoice ? selectedVoice.name : "Seleccionar voz"}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Lista de mensajes */}
-      <FlatList
-        data={messages}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.messageBubble,
-              item.type === "user" ? styles.userBubble : styles.botBubble,
-            ]}
-          >
-            <Text
-              style={item.type === "user" ? styles.userText : styles.botText}
+        <FlatList
+          data={messages}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View
+              style={[
+                styles.messageBubble,
+                item.type === "user" ? styles.userBubble : styles.botBubble,
+              ]}
             >
-              {item.text}
-            </Text>
-            {item.audio && (
-              <TouchableOpacity onPress={() => playAudio(item.audio)}>
-                <Text style={styles.audioText}>🔊 Reproducir</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      />
+              <Text
+                style={item.type === "user" ? styles.userText : styles.botText}
+              >
+                {item.text}
+              </Text>
+              {item.audio && (
+                <TouchableOpacity onPress={() => playAudio(item.audio)}>
+                  <Text style={styles.audioText}>🔊 Reproducir</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        />
+      </LinearGradient>
 
-      {/* Input y botón de enviar */}
       <View style={styles.inputContainer}>
         <TextInput
           value={question}
@@ -216,18 +210,25 @@ export default function ChatApp() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#121212",
+    padding: 20,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  gradientBackground: {
+    padding: 10,
+    borderRadius: 10, // Bordes redondeados (opcional)
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#fff", // Texto en blanco para contrastar con el degradado
   },
   autoPlayOn: {
     color: "#4CAF50",
@@ -239,8 +240,8 @@ const styles = StyleSheet.create({
   },
   voiceSelector: {
     backgroundColor: "#333",
-    padding: 10,
-    borderRadius: 10,
+    padding: 12,
+    borderRadius: 20,
     marginBottom: 10,
     alignItems: "center",
   },
@@ -249,13 +250,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   messageBubble: {
-    padding: 15,
+    padding: 14,
     borderRadius: 20,
-    marginVertical: 5,
+    marginVertical: 8,
     maxWidth: "75%",
     shadowColor: "#000",
     shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
   },
   userBubble: {
@@ -268,32 +269,44 @@ const styles = StyleSheet.create({
   },
   userText: {
     color: "#fff",
+    fontSize: 16,
   },
   botText: {
     color: "#fff",
+    fontSize: 16,
   },
   audioText: {
     color: "#00BCD4",
     marginTop: 5,
   },
+  messagesContainer: {
+    flex: 1,
+    marginBottom: 15,
+    borderRadius: 15,
+    padding: 10,
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#444",
+    paddingTop: 10,
   },
   input: {
     flex: 1,
-    padding: 10,
+    padding: 12,
+    borderRadius: 25,
+    backgroundColor: "#222",
+    color: "#fff",
+    fontSize: 16,
     borderWidth: 1,
     borderColor: "#444",
-    borderRadius: 25,
-    backgroundColor: "#333",
-    color: "#fff",
   },
   sendButton: {
-    marginLeft: 10,
+    marginLeft: 12,
     backgroundColor: "#007AFF",
-    padding: 15,
+    padding: 12,
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
@@ -306,22 +319,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   modalContent: {
     width: "80%",
     backgroundColor: "#333",
-    borderRadius: 10,
-    padding: 20,
+    borderRadius: 15,
+    padding: 25,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#fff",
-    marginBottom: 10,
+    marginBottom: 15,
   },
   voiceItem: {
-    padding: 10,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#444",
   },
@@ -330,13 +343,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   voiceDetails: {
-    color: "#aaa",
+    color: "#bbb",
     fontSize: 14,
   },
   closeButton: {
-    marginTop: 10,
+    marginTop: 15,
     backgroundColor: "#007AFF",
-    padding: 10,
+    padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
@@ -346,10 +359,10 @@ const styles = StyleSheet.create({
   },
   selectVoiceButton: {
     backgroundColor: "#444",
-    padding: 10,
-    borderRadius: 10,
+    padding: 12,
+    borderRadius: 15,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   selectVoiceButtonText: {
     color: "#fff",
